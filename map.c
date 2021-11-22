@@ -8,26 +8,26 @@
 #define EXPAND_FACTOR 2
 
 /* Helper Functions */
-static char* copyString(const char* str);
+static char *copyString(const char *str);
 static MapResult expand(Map map);
 
 /** Type for defining an element of a map */
 typedef struct Element_t
 {
-    char* key;
-    char* value;
-} *Element;
+    char *key;
+    char *value;
+} * Element;
 
 /** Type for defining the map */
 struct Map_t
 {
-    Element* elements;
+    Element *elements;
     int size;
     int maxSize;
     int iterator;
 };
 
-int main()
+/*int main()
 {
     Map map = mapCreate();
 
@@ -51,7 +51,7 @@ int main()
     mapDestroy(map);
 
     return 0;
-}
+}*/
 
 Map mapCreate()
 {
@@ -97,24 +97,24 @@ Map mapCopy(Map map)
         return NULL;
     }
 
-    Map map_copy = malloc(sizeof(*map_copy));
+    Map map_copy = mapCreate();
     if (map_copy == NULL)
     {
         return NULL;
     }
-
-    map_copy->size = mapGetSize(map);
     map_copy->maxSize = map->maxSize;
 
-    map_copy->elements = malloc(sizeof(Element) * (map_copy->maxSize));
+    /* map_copy->elements = malloc(sizeof(Element) * (map_copy->maxSize));
     if (map_copy->elements == NULL)
     {
         return NULL;
-    }
+    } */
 
     for (int i = 0; i < mapGetSize(map); i++)
     {
-        map_copy->elements[i] = map->elements[i]; //TODO: maybe should copy here
+        MapResult r = mapPut(map_copy, map->elements[i]->key, map->elements[i]->value);
+        if (r != MAP_SUCCESS)
+            return NULL;
     }
 
     return map_copy;
@@ -130,7 +130,7 @@ int mapGetSize(Map map)
     return map->size;
 }
 
-bool mapContains(Map map, const char* key)
+bool mapContains(Map map, const char *key)
 {
     if (map == NULL || key == NULL)
     {
@@ -148,7 +148,7 @@ bool mapContains(Map map, const char* key)
     return false;
 }
 
-MapResult mapPut(Map map, const char* key, const char* data)
+MapResult mapPut(Map map, const char *key, const char *data)
 {
     if (map == NULL || key == NULL || data == NULL)
     {
@@ -159,7 +159,7 @@ MapResult mapPut(Map map, const char* key, const char* data)
     {
         if (strcmp(map->elements[i]->key, key) == 0)
         {
-            char* newData = copyString(data);
+            char *newData = copyString(data);
             if (newData == NULL)
             {
                 return MAP_OUT_OF_MEMORY;
@@ -176,8 +176,8 @@ MapResult mapPut(Map map, const char* key, const char* data)
     }
 
     /* If the key doesn't exist - add a new a key and assign a new value to it */
-    char* newKey = copyString(key);
-    char* newData = copyString(data);
+    char *newKey = copyString(key);
+    char *newData = copyString(data);
     if (newData == NULL || newKey == NULL)
     {
         return MAP_OUT_OF_MEMORY;
@@ -198,7 +198,7 @@ MapResult mapPut(Map map, const char* key, const char* data)
     return MAP_SUCCESS;
 }
 
-char* mapGet(Map map, const char* key)
+char *mapGet(Map map, const char *key)
 {
     if (map == NULL || key == NULL || mapGetSize(map) == 0)
     {
@@ -216,7 +216,7 @@ char* mapGet(Map map, const char* key)
     return NULL;
 }
 
-MapResult mapRemove(Map map, const char* key)
+MapResult mapRemove(Map map, const char *key)
 {
     if (map == NULL || key == NULL)
     {
@@ -229,6 +229,7 @@ MapResult mapRemove(Map map, const char* key)
         {
             free(map->elements[i]->key);
             free(map->elements[i]->value);
+            free(map->elements[i]);
 
             map->elements[i] = map->elements[map->size - 1];
             map->size--;
@@ -240,7 +241,7 @@ MapResult mapRemove(Map map, const char* key)
     return MAP_ITEM_DOES_NOT_EXIST;
 }
 
-char* mapGetFirst(Map map)
+char *mapGetFirst(Map map)
 {
     if (map == NULL || mapGetSize(map) == 0)
     {
@@ -251,7 +252,7 @@ char* mapGetFirst(Map map)
     return mapGetNext(map);
 }
 
-char* mapGetNext(Map map)
+char *mapGetNext(Map map)
 {
     if (map == NULL || map->iterator >= mapGetSize(map))
     {
@@ -272,15 +273,17 @@ MapResult mapClear(Map map)
     {
         free(map->elements[i]->key);
         free(map->elements[i]->value);
+        free(map->elements[i]);
     }
+    map->size = 0;
     return MAP_SUCCESS;
 }
-
+/* Expands memory if needed */
 static MapResult expand(Map map)
 {
     int newSize = EXPAND_FACTOR * map->maxSize;
 
-    Element* newElements = realloc(map->elements, newSize * sizeof(newElements));
+    Element *newElements = realloc(map->elements, newSize * sizeof(newElements));
     if (newElements == NULL)
     {
         return MAP_OUT_OF_MEMORY;
@@ -292,9 +295,9 @@ static MapResult expand(Map map)
     return MAP_SUCCESS;
 }
 
-static char* copyString(const char* str)
+static char *copyString(const char *str)
 {
-    char* newStr = malloc(strlen(str) + 1);
+    char *newStr = malloc(strlen(str) + 1);
     if (newStr == NULL)
     {
         return NULL;
